@@ -1,34 +1,31 @@
 --[[
-    LiquidGlass UI Library v1.0
-    Стиль: Liquid Glass / Glassmorphism
-    Фон: прозрачный (ничего лишнего)
+    RetroBlox UI Library v1.0
+    Стиль: классический Roblox (2010-2013)
+    - Серые панели, тёмно-синие кнопки, простые рамки
+    - Никакого стекла, градиентов и анимаций "жидкого стекла"
 --]]
 
-local LiquidGlass = {}
-LiquidGlass.__index = LiquidGlass
+local RetroBlox = {}
+RetroBlox.__index = RetroBlox
 
-local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 
-local LocalPlayer = Players.LocalPlayer
-
-LiquidGlass.Theme = {
-    Background     = Color3.fromRGB(20, 20, 30),
-    GlassTint      = Color3.fromRGB(255, 255, 255),
-    GlassTransp    = 0.85,
-    Accent         = Color3.fromRGB(120, 180, 255),
-    AccentSoft     = Color3.fromRGB(80, 140, 220),
-    Text           = Color3.fromRGB(240, 240, 250),
-    SubText        = Color3.fromRGB(180, 180, 200),
-    Stroke         = Color3.fromRGB(255, 255, 255),
-    StrokeTransp   = 0.85,
-    CornerRadius   = 14,
-    Font           = Enum.Font.GothamMedium,
-    TitleFont      = Enum.Font.GothamBold,
-    AnimationTime  = 0.25,
+--// Классическая палитра старого Roblox
+RetroBlox.Theme = {
+    Panel       = Color3.fromRGB(160, 160, 160),  -- серый фон панели
+    PanelDark   = Color3.fromRGB(120, 120, 120),  -- тёмно-серый для рамок
+    Header      = Color3.fromRGB(100, 100, 100),  -- заголовок
+    Button      = Color3.fromRGB(60, 90, 150),    -- тёмно-синие кнопки
+    ButtonHover = Color3.fromRGB(80, 110, 180),
+    ButtonClick = Color3.fromRGB(40, 70, 130),
+    Text        = Color3.fromRGB(255, 255, 255),
+    TextDark    = Color3.fromRGB(40, 40, 40),
+    Border      = Color3.fromRGB(60, 60, 60),
+    Font        = Enum.Font.SourceSansBold,
+    TitleFont   = Enum.Font.SourceSansBold,
+    TextSize    = 16,
 }
 
 local function new(class, props)
@@ -39,323 +36,221 @@ local function new(class, props)
     return inst
 end
 
-local function tween(obj, time, props, style, dir)
-    local info = TweenInfo.new(
-        time or LiquidGlass.Theme.AnimationTime,
-        style or Enum.EasingStyle.Quart,
-        dir or Enum.EasingDirection.Out
-    )
-    local t = TweenService:Create(obj, info, props)
-    t:Play()
-    return t
-end
-
---// Стеклянная панель (только окно, никакого фона)
-local function makeGlass(parent, size, position, radius)
-    local T = LiquidGlass.Theme
-
-    local container = new("Frame", {
-        Parent = parent,
-        Size = size,
-        Position = position,
-        BackgroundColor3 = T.Background,
-        BackgroundTransparency = 0.35,
-        BorderSizePixel = 0,
-    })
-
-    new("UICorner", {
-        Parent = container,
-        CornerRadius = UDim.new(0, radius or T.CornerRadius),
-    })
-
-    local blur = new("Frame", {
-        Parent = container,
-        Size = UDim2.fromScale(1, 1),
-        BackgroundColor3 = T.GlassTint,
-        BackgroundTransparency = T.GlassTransp,
-        BorderSizePixel = 0,
-        ZIndex = container.ZIndex,
-    })
-    new("UICorner", { Parent = blur, CornerRadius = UDim.new(0, radius or T.CornerRadius) })
-
-    local stroke = new("UIStroke", {
-        Parent = container,
-        Color = T.Stroke,
-        Thickness = 1,
-        Transparency = T.StrokeTransp,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-    })
-
-    new("UIGradient", {
-        Parent = blur,
-        Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.5),
-            NumberSequenceKeypoint.new(0.5, 0.85),
-            NumberSequenceKeypoint.new(1, 0.6),
-        }),
-        Rotation = 90,
-    })
-
-    return container, blur, stroke
+--// Ретро-рамка (без закруглений, простой бордер)
+local function retroFrame(parent, props)
+    local f = new("Frame", props or {})
+    f.BorderSizePixel = 2
+    f.BorderColor3 = RetroBlox.Theme.Border
+    return f
 end
 
 --// ================= ОКНО =================
-function LiquidGlass:CreateWindow(config)
+function RetroBlox:CreateWindow(config)
     config = config or {}
     local T = self.Theme
 
-    local title = config.Title or "LiquidGlass"
-    local subtitle = config.Subtitle or "v1.0"
-    local size = config.Size or UDim2.fromOffset(560, 380)
-    local pos = config.Position or UDim2.fromScale(0.5, 0.5)
-    local toggleKey = config.ToggleKey or Enum.KeyCode.RightShift
-
-    -- Удаляем ВСЕ старые версии GUI, если они остались
-    for _, name in ipairs({"LiquidGlassUI", "LiquidGlass"}) do
+    -- Чистим старые версии
+    for _, name in ipairs({"LiquidGlassUI", "LiquidGlass", "RetroBloxUI", "RayfieldUI"}) do
         local old = CoreGui:FindFirstChild(name)
         if old then old:Destroy() end
     end
 
     local gui = new("ScreenGui", {
-        Name = "LiquidGlassUI",
+        Name = "RetroBloxUI",
         ResetOnSpawn = false,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
         IgnoreGuiInset = true,
     })
     gui.Parent = CoreGui
 
-    -- ❗ Никакого фона — только окно
+    -- Главная панель (серый прямоугольник с рамкой)
     local root = new("Frame", {
         Parent = gui,
         AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = pos,
-        Size = size,
-        BackgroundTransparency = 1,
+        Position = config.Position or UDim2.fromScale(0.5, 0.5),
+        Size = config.Size or UDim2.fromOffset(560, 380),
+        BackgroundColor3 = T.Panel,
+        BorderSizePixel = 2,
+        BorderColor3 = T.Border,
     })
 
-    local main, blurLayer, mainStroke = makeGlass(root, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), T.CornerRadius)
-    main.ZIndex = 2
-
+    -- Заголовок (тёмно-серая полоса)
     local header = new("Frame", {
-        Parent = main,
-        Size = UDim2.new(1, 0, 0, 48),
-        BackgroundTransparency = 1,
-        ZIndex = 3,
+        Parent = root,
+        Size = UDim2.new(1, 0, 0, 34),
+        BackgroundColor3 = T.Header,
+        BorderSizePixel = 0,
     })
 
     new("TextLabel", {
         Parent = header,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(18, 8),
-        Size = UDim2.new(1, -80, 0, 20),
+        Position = UDim2.fromOffset(10, 0),
+        Size = UDim2.new(1, -50, 1, 0),
         Font = T.TitleFont,
-        Text = title,
+        Text = config.Title or "RetroBlox Menu",
         TextColor3 = T.Text,
-        TextSize = 16,
+        TextSize = T.TextSize,
         TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 4,
     })
 
-    new("TextLabel", {
-        Parent = header,
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(18, 26),
-        Size = UDim2.new(1, -80, 0, 14),
-        Font = T.Font,
-        Text = subtitle,
-        TextColor3 = T.SubText,
-        TextSize = 11,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 4,
-    })
-
+    -- Кнопка закрытия в стиле старого Roblox (крестик в углу)
     local close = new("TextButton", {
         Parent = header,
-        AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -14, 0.5, 0),
-        Size = UDim2.fromOffset(26, 26),
-        BackgroundColor3 = T.Accent,
-        BackgroundTransparency = 0.6,
-        BorderSizePixel = 0,
-        Text = "✕",
-        Font = Enum.Font.GothamBold,
+        AnchorPoint = Vector2.new(1, 0),
+        Position = UDim2.new(1, 0, 0, 0),
+        Size = UDim2.fromOffset(34, 34),
+        BackgroundColor3 = T.Button,
+        BorderSizePixel = 2,
+        BorderColor3 = T.Border,
+        Text = "X",
+        Font = Enum.Font.SourceSansBold,
         TextColor3 = T.Text,
-        TextSize = 14,
+        TextSize = 18,
         AutoButtonColor = false,
-        ZIndex = 5,
     })
-    new("UICorner", { Parent = close, CornerRadius = UDim.new(1, 0) })
-
     close.MouseEnter:Connect(function()
-        tween(close, 0.15, { BackgroundTransparency = 0.2 })
+        close.BackgroundColor3 = T.ButtonHover
     end)
     close.MouseLeave:Connect(function()
-        tween(close, 0.15, { BackgroundTransparency = 0.6 })
+        close.BackgroundColor3 = T.Button
     end)
     close.MouseButton1Click:Connect(function()
-        tween(root, 0.2, { Size = UDim2.fromOffset(0, 0) })
-        task.wait(0.2)
         gui:Destroy()
     end)
 
+    -- Тело
     local body = new("Frame", {
-        Parent = main,
-        Position = UDim2.fromOffset(0, 48),
-        Size = UDim2.new(1, 0, 1, -48),
-        BackgroundTransparency = 1,
-        ZIndex = 3,
+        Parent = root,
+        Position = UDim2.fromOffset(0, 34),
+        Size = UDim2.new(1, 0, 1, -34),
+        BackgroundColor3 = T.Panel,
+        BorderSizePixel = 0,
     })
 
+    -- Сайдбар под вкладки
     local sidebar = new("Frame", {
         Parent = body,
-        Size = UDim2.new(0, 140, 1, -16),
-        Position = UDim2.fromOffset(8, 8),
-        BackgroundTransparency = 1,
-        ZIndex = 4,
+        Size = UDim2.new(0, 130, 1, -12),
+        Position = UDim2.fromOffset(6, 6),
+        BackgroundColor3 = T.PanelDark,
+        BorderSizePixel = 2,
+        BorderColor3 = T.Border,
     })
     new("UIListLayout", {
         Parent = sidebar,
-        Padding = UDim.new(0, 6),
+        Padding = UDim.new(0, 2),
         SortOrder = Enum.SortOrder.LayoutOrder,
     })
+    new("UIPadding", { Parent = sidebar, PaddingTop = UDim.new(0, 4) })
 
+    -- Контент
     local content = new("Frame", {
         Parent = body,
-        Position = UDim2.fromOffset(156, 8),
-        Size = UDim2.new(1, -164, 1, -16),
-        BackgroundTransparency = 1,
-        ZIndex = 4,
+        Position = UDim2.fromOffset(144, 6),
+        Size = UDim2.new(1, -150, 1, -12),
+        BackgroundColor3 = T.PanelDark,
+        BorderSizePixel = 2,
+        BorderColor3 = T.Border,
     })
 
-    -- Перетаскивание
+    -- Перетаскивание (за заголовок)
     do
-        local dragging, dragStart, startPos
-        header.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragStart = input.Position
-                startPos = root.Position
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
-                        dragging = false
-                    end
+        local drag, start, pos0
+        header.InputBegan:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1
+            or i.UserInputType == Enum.UserInputType.Touch then
+                drag = true
+                start = i.Position
+                pos0 = root.Position
+                i.Changed:Connect(function()
+                    if i.UserInputState == Enum.UserInputState.End then drag = false end
                 end)
             end
         end)
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - dragStart
+        UserInputService.InputChanged:Connect(function(i)
+            if drag and (i.UserInputType == Enum.UserInputType.MouseMovement
+            or i.UserInputType == Enum.UserInputType.Touch) then
+                local d = i.Position - start
                 root.Position = UDim2.new(
-                    startPos.X.Scale, startPos.X.Offset + delta.X,
-                    startPos.Y.Scale, startPos.Y.Offset + delta.Y
+                    pos0.X.Scale, pos0.X.Offset + d.X,
+                    pos0.Y.Scale, pos0.Y.Offset + d.Y
                 )
             end
         end)
     end
 
-    UserInputService.InputBegan:Connect(function(input, gp)
-        if gp then return end
-        if input.KeyCode == toggleKey then
-            gui.Enabled = not gui.Enabled
-        end
-    end)
-
     local Window = {
         Gui = gui,
         Root = root,
-        Main = main,
         Sidebar = sidebar,
         Content = content,
         Tabs = {},
         ActiveTab = nil,
     }
-    setmetatable(Window, { __index = LiquidGlass })
-
-    root.Size = UDim2.fromOffset(0, 0)
-    tween(root, 0.35, { Size = size }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-
+    setmetatable(Window, { __index = RetroBlox })
     return Window
 end
 
 --// ================= ВКЛАДКА =================
-function LiquidGlass:CreateTab(window, name)
+function RetroBlox:CreateTab(window, name)
     local T = self.Theme
     name = name or "Tab"
 
     local btn = new("TextButton", {
         Parent = window.Sidebar,
-        Size = UDim2.new(1, 0, 0, 34),
-        BackgroundColor3 = T.Accent,
-        BackgroundTransparency = 0.85,
-        BorderSizePixel = 0,
-        Text = "  " .. name,
+        Size = UDim2.new(1, 0, 0, 28),
+        BackgroundColor3 = T.Button,
+        BorderSizePixel = 1,
+        BorderColor3 = T.Border,
+        Text = name,
         Font = T.Font,
         TextColor3 = T.Text,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Center,
         AutoButtonColor = false,
-        ZIndex = 5,
-    })
-    new("UICorner", { Parent = btn, CornerRadius = UDim.new(0, 10) })
-    new("UIStroke", {
-        Parent = btn,
-        Color = T.Stroke,
-        Thickness = 1,
-        Transparency = 0.9,
     })
 
     local page = new("ScrollingFrame", {
         Parent = window.Content,
-        Size = UDim2.fromScale(1, 1),
+        Size = UDim2.new(1, -8, 1, -8),
+        Position = UDim2.fromOffset(4, 4),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        ScrollBarThickness = 3,
-        ScrollBarImageColor3 = T.Accent,
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         Visible = false,
-        ZIndex = 5,
     })
-    new("UIListLayout", {
-        Parent = page,
-        Padding = UDim.new(0, 8),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-    })
-    new("UIPadding", {
-        Parent = page,
-        PaddingRight = UDim.new(0, 8),
-    })
+    new("UIListLayout", { Parent = page, Padding = UDim.new(0, 4) })
 
     local tab = { Button = btn, Page = page, Name = name }
 
     btn.MouseEnter:Connect(function()
         if window.ActiveTab ~= tab then
-            tween(btn, 0.15, { BackgroundTransparency = 0.7 })
+            btn.BackgroundColor3 = T.ButtonHover
         end
     end)
     btn.MouseLeave:Connect(function()
         if window.ActiveTab ~= tab then
-            tween(btn, 0.15, { BackgroundTransparency = 0.85 })
+            btn.BackgroundColor3 = T.Button
         end
     end)
     btn.MouseButton1Click:Connect(function()
         if window.ActiveTab then
             window.ActiveTab.Page.Visible = false
-            tween(window.ActiveTab.Button, 0.15, { BackgroundTransparency = 0.85 })
-            window.ActiveTab.Button.TextColor3 = T.Text
+            window.ActiveTab.Button.BackgroundColor3 = T.Button
         end
         window.ActiveTab = tab
         page.Visible = true
-        tween(btn, 0.2, { BackgroundTransparency = 0.4 })
-        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.BackgroundColor3 = T.ButtonClick
     end)
 
     if not window.ActiveTab then
         window.ActiveTab = tab
         page.Visible = true
-        btn.BackgroundTransparency = 0.4
+        btn.BackgroundColor3 = T.ButtonClick
     end
 
     window.Tabs[name] = tab
@@ -364,183 +259,142 @@ end
 
 --// ================= ЭЛЕМЕНТЫ =================
 
-function LiquidGlass:CreateButton(tab, config)
+function RetroBlox:CreateButton(tab, config)
     local T = self.Theme
     config = config or {}
-    local text = config.Text or "Button"
-    local callback = config.Callback or function() end
 
     local btn = new("TextButton", {
         Parent = tab.Page,
-        Size = UDim2.new(1, 0, 0, 36),
-        BackgroundColor3 = T.Accent,
-        BackgroundTransparency = 0.75,
-        BorderSizePixel = 0,
-        Text = text,
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundColor3 = T.Button,
+        BorderSizePixel = 1,
+        BorderColor3 = T.Border,
+        Text = config.Text or "Button",
         Font = T.Font,
         TextColor3 = T.Text,
-        TextSize = 13,
+        TextSize = 14,
         AutoButtonColor = false,
     })
-    new("UICorner", { Parent = btn, CornerRadius = UDim.new(0, 10) })
-    new("UIStroke", { Parent = btn, Color = T.Stroke, Thickness = 1, Transparency = 0.85 })
 
     btn.MouseEnter:Connect(function()
-        tween(btn, 0.15, { BackgroundTransparency = 0.5 })
+        btn.BackgroundColor3 = T.ButtonHover
     end)
     btn.MouseLeave:Connect(function()
-        tween(btn, 0.15, { BackgroundTransparency = 0.75 })
+        btn.BackgroundColor3 = T.Button
     end)
     btn.MouseButton1Click:Connect(function()
-        tween(btn, 0.08, { BackgroundTransparency = 0.3 })
-        task.wait(0.08)
-        tween(btn, 0.15, { BackgroundTransparency = 0.5 })
-        pcall(callback)
+        btn.BackgroundColor3 = T.ButtonClick
+        task.wait(0.1)
+        btn.BackgroundColor3 = T.ButtonHover
+        pcall(config.Callback or function() end)
     end)
 
     return btn
 end
 
-function LiquidGlass:CreateToggle(tab, config)
+function RetroBlox:CreateToggle(tab, config)
     local T = self.Theme
     config = config or {}
-    local text = config.Text or "Toggle"
-    local default = config.Default or false
-    local callback = config.Callback or function() end
-
-    local state = default
+    local state = config.Default or false
 
     local row = new("Frame", {
         Parent = tab.Page,
-        Size = UDim2.new(1, 0, 0, 36),
-        BackgroundColor3 = T.GlassTint,
-        BackgroundTransparency = 0.9,
-        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundColor3 = T.Panel,
+        BorderSizePixel = 1,
+        BorderColor3 = T.Border,
     })
-    new("UICorner", { Parent = row, CornerRadius = UDim.new(0, 10) })
-    new("UIStroke", { Parent = row, Color = T.Stroke, Thickness = 1, Transparency = 0.9 })
 
     new("TextLabel", {
         Parent = row,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(12, 0),
-        Size = UDim2.new(1, -60, 1, 0),
+        Position = UDim2.fromOffset(8, 0),
+        Size = UDim2.new(1, -50, 1, 0),
         Font = T.Font,
-        Text = text,
-        TextColor3 = T.Text,
+        Text = config.Text or "Toggle",
+        TextColor3 = T.TextDark,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+
+    -- Старый чекбокс (квадратная кнопка)
+    local box = new("TextButton", {
+        Parent = row,
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -6, 0.5, 0),
+        Size = UDim2.fromOffset(20, 20),
+        BackgroundColor3 = Color3.fromRGB(220, 220, 220),
+        BorderSizePixel = 2,
+        BorderColor3 = T.Border,
+        Text = state and "✓" or "",
+        Font = Enum.Font.SourceSansBold,
+        TextColor3 = Color3.fromRGB(0, 120, 0),
+        TextSize = 16,
+        AutoButtonColor = false,
+    })
+
+    box.MouseButton1Click:Connect(function()
+        state = not state
+        box.Text = state and "✓" or ""
+        pcall(config.Callback or function() end, state)
+    end)
+
+    return { Get = function() return state end }
+end
+
+function RetroBlox:CreateSlider(tab, config)
+    local T = self.Theme
+    config = config or {}
+    local min, max = config.Min or 0, config.Max or 100
+    local value = math.clamp(config.Default or min, min, max)
+
+    local row = new("Frame", {
+        Parent = tab.Page,
+        Size = UDim2.new(1, 0, 0, 46),
+        BackgroundColor3 = T.Panel,
+        BorderSizePixel = 1,
+        BorderColor3 = T.Border,
+    })
+
+    new("TextLabel", {
+        Parent = row,
+        BackgroundTransparency = 1,
+        Position = UDim2.fromOffset(8, 4),
+        Size = UDim2.new(1, -60, 0, 16),
+        Font = T.Font,
+        Text = config.Text or "Slider",
+        TextColor3 = T.TextDark,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    local track = new("Frame", {
-        Parent = row,
-        AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -12, 0.5, 0),
-        Size = UDim2.fromOffset(40, 20),
-        BackgroundColor3 = state and T.Accent or Color3.fromRGB(80, 80, 95),
-        BorderSizePixel = 0,
-    })
-    new("UICorner", { Parent = track, CornerRadius = UDim.new(1, 0) })
-
-    local knob = new("Frame", {
-        Parent = track,
-        AnchorPoint = Vector2.new(0, 0.5),
-        Position = state and UDim2.new(1, -20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
-        Size = UDim2.fromOffset(16, 16),
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-        BorderSizePixel = 0,
-    })
-    new("UICorner", { Parent = knob, CornerRadius = UDim.new(1, 0) })
-
-    local function apply(v)
-        state = v
-        tween(track, 0.2, {
-            BackgroundColor3 = state and T.Accent or Color3.fromRGB(80, 80, 95)
-        })
-        tween(knob, 0.2, {
-            Position = state and UDim2.new(1, -20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
-        })
-        pcall(callback, state)
-    end
-
-    local click = new("TextButton", {
-        Parent = row,
-        Size = UDim2.fromScale(1, 1),
-        BackgroundTransparency = 1,
-        Text = "",
-    })
-    click.MouseButton1Click:Connect(function()
-        apply(not state)
-    end)
-
-    return { Set = apply, Get = function() return state end }
-end
-
-function LiquidGlass:CreateSlider(tab, config)
-    local T = self.Theme
-    config = config or {}
-    local text = config.Text or "Slider"
-    local min = config.Min or 0
-    local max = config.Max or 100
-    local default = config.Default or min
-    local callback = config.Callback or function() end
-
-    local value = math.clamp(default, min, max)
-
-    local row = new("Frame", {
-        Parent = tab.Page,
-        Size = UDim2.new(1, 0, 0, 52),
-        BackgroundColor3 = T.GlassTint,
-        BackgroundTransparency = 0.9,
-        BorderSizePixel = 0,
-    })
-    new("UICorner", { Parent = row, CornerRadius = UDim.new(0, 10) })
-    new("UIStroke", { Parent = row, Color = T.Stroke, Thickness = 1, Transparency = 0.9 })
-
-    new("TextLabel", {
-        Parent = row,
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(12, 6),
-        Size = UDim2.new(1, -60, 0, 16),
-        Font = T.Font,
-        Text = text,
-        TextColor3 = T.Text,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    })
-
-    local valueLabel = new("TextLabel", {
+    local valLabel = new("TextLabel", {
         Parent = row,
         BackgroundTransparency = 1,
         AnchorPoint = Vector2.new(1, 0),
-        Position = UDim2.new(1, -12, 6),
+        Position = UDim2.new(1, -8, 4),
         Size = UDim2.fromOffset(50, 16),
         Font = T.Font,
         Text = tostring(value),
-        TextColor3 = T.Accent,
-        TextSize = 12,
+        TextColor3 = Color3.fromRGB(0, 80, 160),
+        TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Right,
     })
 
     local bar = new("Frame", {
         Parent = row,
-        Position = UDim2.fromOffset(12, 32),
-        Size = UDim2.new(1, -24, 0, 8),
-        BackgroundColor3 = Color3.fromRGB(60, 60, 75),
-        BorderSizePixel = 0,
+        Position = UDim2.fromOffset(8, 28),
+        Size = UDim2.new(1, -16, 0, 10),
+        BackgroundColor3 = Color3.fromRGB(100, 100, 100),
+        BorderSizePixel = 2,
+        BorderColor3 = T.Border,
     })
-    new("UICorner", { Parent = bar, CornerRadius = UDim.new(1, 0) })
 
     local fill = new("Frame", {
         Parent = bar,
         Size = UDim2.fromScale((value - min) / (max - min), 1),
-        BackgroundColor3 = T.Accent,
+        BackgroundColor3 = T.Button,
         BorderSizePixel = 0,
-    })
-    new("UICorner", { Parent = fill, CornerRadius = UDim.new(1, 0) })
-    new("UIGradient", {
-        Parent = fill,
-        Color = ColorSequence.new(T.AccentSoft, T.Accent),
     })
 
     local drag = new("TextButton", {
@@ -552,24 +406,21 @@ function LiquidGlass:CreateSlider(tab, config)
     })
 
     local dragging = false
-
     local function updateFromX(x)
         local rel = math.clamp((x - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
         value = math.floor(min + (max - min) * rel + 0.5)
-        valueLabel.Text = tostring(value)
-        tween(fill, 0.05, { Size = UDim2.fromScale(rel, 1) })
-        pcall(callback, value)
+        valLabel.Text = tostring(value)
+        fill.Size = UDim2.fromScale(rel, 1)
+        pcall(config.Callback or function() end, value)
     end
 
     drag.MouseButton1Down:Connect(function() dragging = true end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateFromX(input.Position.X)
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            updateFromX(i.Position.X)
         end
     end)
     drag.MouseButton1Click:Connect(function()
@@ -579,129 +430,113 @@ function LiquidGlass:CreateSlider(tab, config)
     return {
         Set = function(v)
             value = math.clamp(v, min, max)
-            valueLabel.Text = tostring(value)
+            valLabel.Text = tostring(value)
             fill.Size = UDim2.fromScale((value - min) / (max - min), 1)
-            pcall(callback, value)
+            pcall(config.Callback or function() end, value)
         end,
         Get = function() return value end,
     }
 end
 
-function LiquidGlass:CreateTextBox(tab, config)
+function RetroBlox:CreateTextBox(tab, config)
     local T = self.Theme
     config = config or {}
-    local text = config.Text or "Input"
-    local placeholder = config.Placeholder or "..."
-    local callback = config.Callback or function() end
 
     local row = new("Frame", {
         Parent = tab.Page,
-        Size = UDim2.new(1, 0, 0, 36),
-        BackgroundColor3 = T.GlassTint,
-        BackgroundTransparency = 0.9,
-        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundColor3 = T.Panel,
+        BorderSizePixel = 1,
+        BorderColor3 = T.Border,
     })
-    new("UICorner", { Parent = row, CornerRadius = UDim.new(0, 10) })
-    new("UIStroke", { Parent = row, Color = T.Stroke, Thickness = 1, Transparency = 0.9 })
 
     local box = new("TextBox", {
         Parent = row,
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(12, 0),
-        Size = UDim2.new(1, -24, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(230, 230, 230),
+        BorderSizePixel = 2,
+        BorderColor3 = T.Border,
+        Position = UDim2.fromOffset(6, 4),
+        Size = UDim2.new(1, -12, 1, -8),
         Font = T.Font,
         Text = "",
-        PlaceholderText = text .. " — " .. placeholder,
-        PlaceholderColor3 = T.SubText,
-        TextColor3 = T.Text,
-        TextSize = 13,
+        PlaceholderText = config.Text or "Input",
+        PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
+        TextColor3 = Color3.fromRGB(20, 20, 20),
+        TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
         ClearTextOnFocus = false,
     })
 
-    box.Focused:Connect(function()
-        tween(row, 0.15, { BackgroundTransparency = 0.75 })
-    end)
     box.FocusLost:Connect(function(enter)
-        tween(row, 0.15, { BackgroundTransparency = 0.9 })
-        pcall(callback, box.Text, enter)
+        pcall(config.Callback or function() end, box.Text, enter)
     end)
 
     return { Set = function(v) box.Text = v end, Get = function() return box.Text end }
 end
 
-function LiquidGlass:CreateDivider(tab)
+function RetroBlox:CreateSection(tab, text)
     local T = self.Theme
+    return new("TextLabel", {
+        Parent = tab.Page,
+        Size = UDim2.new(1, 0, 0, 22),
+        BackgroundColor3 = T.Header,
+        BorderSizePixel = 1,
+        BorderColor3 = T.Border,
+        Font = T.TitleFont,
+        Text = text or "Section",
+        TextColor3 = T.Text,
+        TextSize = 13,
+    })
+end
+
+function RetroBlox:CreateDivider(tab)
     return new("Frame", {
         Parent = tab.Page,
-        Size = UDim2.new(1, 0, 0, 1),
-        BackgroundColor3 = T.Stroke,
-        BackgroundTransparency = 0.85,
+        Size = UDim2.new(1, 0, 0, 2),
+        BackgroundColor3 = Color3.fromRGB(80, 80, 80),
         BorderSizePixel = 0,
     })
 end
 
-function LiquidGlass:CreateSection(tab, text)
-    local T = self.Theme
-    return new("TextLabel", {
-        Parent = tab.Page,
-        Size = UDim2.new(1, 0, 0, 24),
-        BackgroundTransparency = 1,
-        Font = T.TitleFont,
-        Text = text or "Section",
-        TextColor3 = T.SubText,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    })
-end
-
-function LiquidGlass:Notify(text, duration)
+--// Уведомление в стиле старого Roblox
+function RetroBlox:Notify(text, duration)
     local T = self.Theme
     duration = duration or 3
 
-    local gui = CoreGui:FindFirstChild("LiquidGlassUI")
+    local gui = CoreGui:FindFirstChild("RetroBloxUI")
     if not gui then return end
 
     local notif = new("Frame", {
         Parent = gui,
         AnchorPoint = Vector2.new(0.5, 1),
         Position = UDim2.new(0.5, 0, 1, 60),
-        Size = UDim2.fromOffset(280, 46),
-        BackgroundColor3 = T.Background,
-        BackgroundTransparency = 0.3,
-        BorderSizePixel = 0,
-        ZIndex = 50,
+        Size = UDim2.fromOffset(300, 40),
+        BackgroundColor3 = T.Panel,
+        BorderSizePixel = 2,
+        BorderColor3 = T.Border,
     })
-    new("UICorner", { Parent = notif, CornerRadius = UDim.new(0, 12) })
-    new("UIStroke", { Parent = notif, Color = T.Stroke, Thickness = 1, Transparency = 0.8 })
-
-    local bar = new("Frame", {
-        Parent = notif,
-        Size = UDim2.new(0, 3, 1, -12),
-        Position = UDim2.fromOffset(6, 6),
-        BackgroundColor3 = T.Accent,
-        BorderSizePixel = 0,
-        ZIndex = 51,
-    })
-    new("UICorner", { Parent = bar, CornerRadius = UDim.new(1, 0) })
 
     new("TextLabel", {
         Parent = notif,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(18, 0),
-        Size = UDim2.new(1, -24, 1, 0),
+        Size = UDim2.fromScale(1, 1),
         Font = T.Font,
         Text = text,
-        TextColor3 = T.Text,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
+        TextColor3 = T.TextDark,
+        TextSize = 14,
         TextWrapped = true,
-        ZIndex = 51,
     })
 
-    tween(notif, 0.3, { Position = UDim2.new(0.5, 0, 1, -80) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    local t1 = TweenService:Create(notif, TweenInfo.new(0.25), {
+        Position = UDim2.new(0.5, 0, 1, -60)
+    })
+    t1:Play()
+
     task.delay(duration, function()
-        tween(notif, 0.25, { Position = UDim2.new(0.5, 0, 1, 60), BackgroundTransparency = 1 })
+        local t2 = TweenService:Create(notif, TweenInfo.new(0.25), {
+            Position = UDim2.new(0.5, 0, 1, 60)
+        })
+        t2:Play()
         task.wait(0.3)
         notif:Destroy()
     end)
@@ -709,4 +544,4 @@ function LiquidGlass:Notify(text, duration)
     return notif
 end
 
-return LiquidGlass
+return RetroBlox
