@@ -1,16 +1,12 @@
 --[[
     LiquidGlass UI Library v1.0
     Стиль: Liquid Glass / Glassmorphism
-    Использование:
-        local LiquidGlass = loadstring(game:HttpGet("ССЫЛКА_НА_ЭТОТ_ФАЙЛ"))()
-        -- или локально:
-        local LiquidGlass = require(path.to.LiquidGlass)
+    Фон: прозрачный (ничего лишнего)
 --]]
 
 local LiquidGlass = {}
 LiquidGlass.__index = LiquidGlass
 
---// Сервисы
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -19,12 +15,10 @@ local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 
---// Конфиг темы
 LiquidGlass.Theme = {
     Background     = Color3.fromRGB(20, 20, 30),
     GlassTint      = Color3.fromRGB(255, 255, 255),
     GlassTransp    = 0.85,
-    Blur           = 24,
     Accent         = Color3.fromRGB(120, 180, 255),
     AccentSoft     = Color3.fromRGB(80, 140, 220),
     Text           = Color3.fromRGB(240, 240, 250),
@@ -37,7 +31,6 @@ LiquidGlass.Theme = {
     AnimationTime  = 0.25,
 }
 
---// Утилиты
 local function new(class, props)
     local inst = Instance.new(class)
     for k, v in pairs(props or {}) do
@@ -57,7 +50,7 @@ local function tween(obj, time, props, style, dir)
     return t
 end
 
---// Стеклянная панель
+--// Стеклянная панель (только окно, никакого фона)
 local function makeGlass(parent, size, position, radius)
     local T = LiquidGlass.Theme
 
@@ -117,18 +110,21 @@ function LiquidGlass:CreateWindow(config)
     local pos = config.Position or UDim2.fromScale(0.5, 0.5)
     local toggleKey = config.ToggleKey or Enum.KeyCode.RightShift
 
+    -- Удаляем ВСЕ старые версии GUI, если они остались
+    for _, name in ipairs({"LiquidGlassUI", "LiquidGlass"}) do
+        local old = CoreGui:FindFirstChild(name)
+        if old then old:Destroy() end
+    end
+
     local gui = new("ScreenGui", {
         Name = "LiquidGlassUI",
         ResetOnSpawn = false,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
         IgnoreGuiInset = true,
     })
-
-    if CoreGui:FindFirstChild("LiquidGlassUI") then
-        CoreGui.LiquidGlassUI:Destroy()
-    end
     gui.Parent = CoreGui
 
+    -- ❗ Никакого фона — только окно
     local root = new("Frame", {
         Parent = gui,
         AnchorPoint = Vector2.new(0.5, 0.5),
@@ -199,7 +195,7 @@ function LiquidGlass:CreateWindow(config)
     close.MouseButton1Click:Connect(function()
         tween(root, 0.2, { Size = UDim2.fromOffset(0, 0) })
         task.wait(0.2)
-        gui.Enabled = false
+        gui:Destroy()
     end)
 
     local body = new("Frame", {
@@ -713,5 +709,4 @@ function LiquidGlass:Notify(text, duration)
     return notif
 end
 
--- Финал
 return LiquidGlass
