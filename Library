@@ -1,9 +1,8 @@
 --[[
-    RetroIPad UI Library v1.0
+    RetroIPad UI Library v1.1
     Стиль: Roblox Mobile для iPad (2012-2013)
-    - Синий фон, тёмные плитки с иконками
-    - Синие полосы с названиями
-    - Прямые углы, никаких скруглений
+    - Синий фон, тёмные плитки 3×2
+    - Страницы открываются поверх сетки
 --]]
 
 local RetroIPad = {}
@@ -13,14 +12,13 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
---// Палитра старого мобильного Roblox
 RetroIPad.Theme = {
-    BgTop       = Color3.fromRGB(50, 100, 175),   -- синий фон (верх)
-    BgBottom    = Color3.fromRGB(30, 65, 130),    -- синий фон (низ)
-    Tile        = Color3.fromRGB(45, 45, 55),     -- тёмная плитка
+    BgTop       = Color3.fromRGB(50, 100, 175),
+    BgBottom    = Color3.fromRGB(30, 65, 130),
+    Tile        = Color3.fromRGB(45, 45, 55),
     TileHover   = Color3.fromRGB(70, 70, 90),
     TileClick   = Color3.fromRGB(30, 30, 40),
-    Bar         = Color3.fromRGB(35, 70, 130),    -- синяя полоса под плиткой
+    Bar         = Color3.fromRGB(35, 70, 130),
     BarHover    = Color3.fromRGB(55, 100, 170),
     Header      = Color3.fromRGB(20, 40, 80),
     Text        = Color3.fromRGB(255, 255, 255),
@@ -43,7 +41,6 @@ function RetroIPad:CreateWindow(config)
     config = config or {}
     local T = self.Theme
 
-    -- Чистим старые версии
     for _, name in ipairs({"LiquidGlassUI", "LiquidGlass", "RetroBloxUI", "RetroIPadUI", "RayfieldUI"}) do
         local old = CoreGui:FindFirstChild(name)
         if old then old:Destroy() end
@@ -57,7 +54,6 @@ function RetroIPad:CreateWindow(config)
     })
     gui.Parent = CoreGui
 
-    -- Корневая панель
     local root = new("Frame", {
         Parent = gui,
         AnchorPoint = Vector2.new(0.5, 0.5),
@@ -67,22 +63,19 @@ function RetroIPad:CreateWindow(config)
         BorderSizePixel = 2,
         BorderColor3 = T.Border,
     })
-
-    -- Синий градиент (сверху светлее, снизу темнее)
     new("UIGradient", {
         Parent = root,
         Color = ColorSequence.new(T.BgTop, T.BgBottom),
         Rotation = 90,
     })
 
-    -- Верхняя полоса (статус-бар iPad)
+    -- Верхняя полоса
     local topBar = new("Frame", {
         Parent = root,
         Size = UDim2.new(1, 0, 0, 22),
         BackgroundColor3 = Color3.fromRGB(240, 240, 240),
         BorderSizePixel = 0,
     })
-
     new("TextLabel", {
         Parent = topBar,
         BackgroundTransparency = 1,
@@ -94,7 +87,6 @@ function RetroIPad:CreateWindow(config)
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
     })
-
     new("TextLabel", {
         Parent = topBar,
         BackgroundTransparency = 1,
@@ -107,15 +99,13 @@ function RetroIPad:CreateWindow(config)
         TextXAlignment = Enum.TextXAlignment.Right,
     })
 
-    -- Левая колонка профиля (как на скрине)
+    -- Профиль слева
     local profile = new("Frame", {
         Parent = root,
         Position = UDim2.fromOffset(0, 22),
         Size = UDim2.new(0, 220, 1, -50),
         BackgroundTransparency = 1,
     })
-
-    -- Аватар-заглушка
     local avatar = new("Frame", {
         Parent = profile,
         Position = UDim2.fromOffset(15, 15),
@@ -124,7 +114,6 @@ function RetroIPad:CreateWindow(config)
         BorderSizePixel = 2,
         BorderColor3 = T.Border,
     })
-
     new("TextLabel", {
         Parent = avatar,
         BackgroundTransparency = 1,
@@ -134,7 +123,6 @@ function RetroIPad:CreateWindow(config)
         TextColor3 = Color3.fromRGB(40, 40, 40),
         TextSize = 40,
     })
-
     new("TextLabel", {
         Parent = profile,
         BackgroundTransparency = 1,
@@ -146,7 +134,6 @@ function RetroIPad:CreateWindow(config)
         TextSize = 18,
         TextXAlignment = Enum.TextXAlignment.Left,
     })
-
     new("TextLabel", {
         Parent = profile,
         BackgroundTransparency = 1,
@@ -159,7 +146,7 @@ function RetroIPad:CreateWindow(config)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    -- Нижняя полоса logout
+    -- Нижняя полоса
     local bottom = new("Frame", {
         Parent = root,
         AnchorPoint = Vector2.new(0, 1),
@@ -168,7 +155,6 @@ function RetroIPad:CreateWindow(config)
         BackgroundColor3 = Color3.fromRGB(25, 45, 90),
         BorderSizePixel = 0,
     })
-
     new("TextLabel", {
         Parent = bottom,
         BackgroundTransparency = 1,
@@ -181,15 +167,42 @@ function RetroIPad:CreateWindow(config)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    -- Область плиток (правая часть)
+    -- Область плиток (сетка 3×2)
     local grid = new("Frame", {
         Parent = root,
-        Position = UDim2.fromOffset(220, 22),
-        Size = UDim2.new(1, -220, 1, -50),
+        Position = UDim2.fromOffset(226, 30),
+        Size = UDim2.new(1, -236, 1, -60),
         BackgroundTransparency = 1,
     })
+    new("UIGridLayout", {
+        Parent = grid,
+        CellSize = UDim2.fromOffset(150, 140),
+        CellPadding = UDim2.fromOffset(10, 10),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        FillDirectionMaxCells = 3,
+    })
 
-    -- Перетаскивание за верхнюю полосу
+    -- Кнопка закрытия
+    local close = new("TextButton", {
+        Parent = root,
+        AnchorPoint = Vector2.new(1, 0),
+        Position = UDim2.new(1, -4, 0, 26),
+        Size = UDim2.fromOffset(20, 20),
+        BackgroundColor3 = Color3.fromRGB(200, 60, 60),
+        BorderSizePixel = 1,
+        BorderColor3 = T.Border,
+        Text = "X",
+        Font = Enum.Font.SourceSansBold,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 12,
+        AutoButtonColor = false,
+        ZIndex = 20,
+    })
+    close.MouseButton1Click:Connect(function()
+        gui:Destroy()
+    end)
+
+    -- Перетаскивание
     do
         local drag, start, pos0
         topBar.InputBegan:Connect(function(i)
@@ -215,25 +228,6 @@ function RetroIPad:CreateWindow(config)
         end)
     end
 
-    -- Кнопка закрытия (спрятана в правом верхнем углу, чтобы можно было закрыть)
-    local close = new("TextButton", {
-        Parent = root,
-        AnchorPoint = Vector2.new(1, 0),
-        Position = UDim2.new(1, -4, 0, 26),
-        Size = UDim2.fromOffset(20, 20),
-        BackgroundColor3 = Color3.fromRGB(200, 60, 60),
-        BorderSizePixel = 1,
-        BorderColor3 = T.Border,
-        Text = "X",
-        Font = Enum.Font.SourceSansBold,
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        TextSize = 12,
-        AutoButtonColor = false,
-    })
-    close.MouseButton1Click:Connect(function()
-        gui:Destroy()
-    end)
-
     local Window = {
         Gui = gui,
         Root = root,
@@ -245,7 +239,7 @@ function RetroIPad:CreateWindow(config)
     return Window
 end
 
---// ================= ПЛИТКА-РАЗДЕЛ =================
+--// ================= ПЛИТКА =================
 function RetroIPad:CreateTile(window, config)
     local T = self.Theme
     config = config or {}
@@ -254,13 +248,12 @@ function RetroIPad:CreateTile(window, config)
 
     local tile = new("Frame", {
         Parent = window.Grid,
-        Size = UDim2.fromOffset(160, 150),
+        Size = UDim2.fromOffset(150, 140),
         BackgroundColor3 = T.Tile,
         BorderSizePixel = 2,
         BorderColor3 = T.Border,
     })
 
-    -- Иконка
     local iconFrame = new("Frame", {
         Parent = tile,
         Position = UDim2.fromOffset(10, 10),
@@ -269,7 +262,6 @@ function RetroIPad:CreateTile(window, config)
         BorderSizePixel = 1,
         BorderColor3 = T.Border,
     })
-
     new("TextLabel", {
         Parent = iconFrame,
         BackgroundTransparency = 1,
@@ -280,7 +272,6 @@ function RetroIPad:CreateTile(window, config)
         TextSize = 52,
     })
 
-    -- Синяя полоса с названием
     local bar = new("TextButton", {
         Parent = tile,
         AnchorPoint = Vector2.new(0, 1),
@@ -294,7 +285,6 @@ function RetroIPad:CreateTile(window, config)
         TextSize = T.TextSize,
         AutoButtonColor = false,
     })
-
     bar.MouseEnter:Connect(function()
         bar.BackgroundColor3 = T.BarHover
         tile.BackgroundColor3 = T.TileHover
@@ -304,14 +294,16 @@ function RetroIPad:CreateTile(window, config)
         tile.BackgroundColor3 = T.Tile
     end)
 
-    -- Страница (скрытая по умолчанию)
+    -- Страница поверх сетки
     local page = new("Frame", {
-        Parent = window.Grid,
-        Size = UDim2.fromScale(1, 1),
+        Parent = window.Root,
+        Position = UDim2.fromOffset(226, 30),
+        Size = UDim2.new(1, -236, 1, -60),
         BackgroundColor3 = Color3.fromRGB(40, 80, 145),
         BorderSizePixel = 2,
         BorderColor3 = T.Border,
         Visible = false,
+        ZIndex = 10,
     })
 
     local pageTitle = new("Frame", {
@@ -320,7 +312,6 @@ function RetroIPad:CreateTile(window, config)
         BackgroundColor3 = T.Header,
         BorderSizePixel = 0,
     })
-
     new("TextLabel", {
         Parent = pageTitle,
         BackgroundTransparency = 1,
@@ -333,7 +324,6 @@ function RetroIPad:CreateTile(window, config)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    -- Кнопка "назад"
     local back = new("TextButton", {
         Parent = pageTitle,
         AnchorPoint = Vector2.new(1, 0),
@@ -352,7 +342,6 @@ function RetroIPad:CreateTile(window, config)
     back.MouseLeave:Connect(function() back.BackgroundColor3 = T.Bar end)
     back.MouseButton1Click:Connect(function()
         page.Visible = false
-        tile.Visible = true
     end)
 
     local pageContent = new("ScrollingFrame", {
@@ -373,7 +362,6 @@ function RetroIPad:CreateTile(window, config)
         bar.BackgroundColor3 = T.TileClick
         task.wait(0.08)
         bar.BackgroundColor3 = T.Bar
-        tile.Visible = false
         page.Visible = true
     end)
 
@@ -384,18 +372,16 @@ function RetroIPad:CreateTile(window, config)
         PageContent = pageContent,
         Name = label,
     }
-
     window.Tiles[label] = TileObj
     window.Pages[label] = TileObj
     return TileObj
 end
 
---// ================= ЭЛЕМЕНТЫ (внутри плитки) =================
+--// ================= ЭЛЕМЕНТЫ =================
 
 function RetroIPad:CreateButton(tile, config)
     local T = self.Theme
     config = config or {}
-
     local btn = new("TextButton", {
         Parent = tile.PageContent,
         Size = UDim2.new(1, 0, 0, 32),
@@ -431,7 +417,6 @@ function RetroIPad:CreateToggle(tile, config)
         BorderSizePixel = 1,
         BorderColor3 = T.Border,
     })
-
     new("TextLabel", {
         Parent = row,
         BackgroundTransparency = 1,
@@ -444,7 +429,6 @@ function RetroIPad:CreateToggle(tile, config)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    -- Классический квадратный чекбокс в стиле iOS того времени
     local box = new("TextButton", {
         Parent = row,
         AnchorPoint = Vector2.new(1, 0.5),
@@ -480,7 +464,6 @@ function RetroIPad:CreateSlider(tile, config)
         BorderSizePixel = 1,
         BorderColor3 = T.Border,
     })
-
     new("TextLabel", {
         Parent = row,
         BackgroundTransparency = 1,
@@ -492,7 +475,6 @@ function RetroIPad:CreateSlider(tile, config)
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
     })
-
     local valLabel = new("TextLabel", {
         Parent = row,
         BackgroundTransparency = 1,
@@ -505,7 +487,6 @@ function RetroIPad:CreateSlider(tile, config)
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Right,
     })
-
     local bar = new("Frame", {
         Parent = row,
         Position = UDim2.fromOffset(10, 28),
@@ -514,14 +495,12 @@ function RetroIPad:CreateSlider(tile, config)
         BorderSizePixel = 2,
         BorderColor3 = T.Border,
     })
-
     local fill = new("Frame", {
         Parent = bar,
         Size = UDim2.fromScale((value - min) / (max - min), 1),
         BackgroundColor3 = T.Bar,
         BorderSizePixel = 0,
     })
-
     local drag = new("TextButton", {
         Parent = bar,
         Size = UDim2.fromScale(1, 2),
@@ -565,7 +544,6 @@ end
 function RetroIPad:CreateTextBox(tile, config)
     local T = self.Theme
     config = config or {}
-
     local row = new("Frame", {
         Parent = tile.PageContent,
         Size = UDim2.new(1, 0, 0, 32),
@@ -573,7 +551,6 @@ function RetroIPad:CreateTextBox(tile, config)
         BorderSizePixel = 1,
         BorderColor3 = T.Border,
     })
-
     local box = new("TextBox", {
         Parent = row,
         BackgroundColor3 = Color3.fromRGB(230, 235, 245),
@@ -611,7 +588,6 @@ function RetroIPad:CreateSection(tile, text)
     })
 end
 
---// Уведомление
 function RetroIPad:Notify(text, duration)
     local T = self.Theme
     duration = duration or 3
@@ -626,8 +602,8 @@ function RetroIPad:Notify(text, duration)
         BackgroundColor3 = T.Bar,
         BorderSizePixel = 2,
         BorderColor3 = T.Border,
+        ZIndex = 100,
     })
-
     new("TextLabel", {
         Parent = notif,
         BackgroundTransparency = 1,
@@ -638,11 +614,9 @@ function RetroIPad:Notify(text, duration)
         TextSize = 14,
         TextWrapped = true,
     })
-
     TweenService:Create(notif, TweenInfo.new(0.25), {
         Position = UDim2.new(0.5, 0, 1, -50)
     }):Play()
-
     task.delay(duration, function()
         TweenService:Create(notif, TweenInfo.new(0.25), {
             Position = UDim2.new(0.5, 0, 1, 60)
